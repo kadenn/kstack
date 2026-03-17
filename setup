@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# kstack setup — install agent-browser + register all skills with Claude Code
+set -e
+
+KSTACK_DIR="$(cd "$(dirname "$0")" && pwd)"
+SKILLS_DIR="$(dirname "$KSTACK_DIR")"
+
+# 1. Install agent-browser
+if ! command -v agent-browser &>/dev/null; then
+  echo "Installing agent-browser..."
+  npm install -g agent-browser
+fi
+
+# 2. Install Chrome for agent-browser
+echo "Installing Chrome for Testing..."
+agent-browser install
+
+# 3. Only create skill symlinks if we're inside a .claude/skills directory
+SKILLS_BASENAME="$(basename "$SKILLS_DIR")"
+if [ "$SKILLS_BASENAME" = "skills" ]; then
+  linked=()
+  for skill_dir in "$KSTACK_DIR"/*/; do
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      skill_name="$(basename "$skill_dir")"
+      target="$SKILLS_DIR/$skill_name"
+      # Create or update symlink; skip if a real file/directory exists
+      if [ -L "$target" ] || [ ! -e "$target" ]; then
+        ln -snf "kstack/$skill_name" "$target"
+        linked+=("$skill_name")
+      fi
+    fi
+  done
+
+  echo "kstack ready."
+  echo "  browser: agent-browser ($(agent-browser --version 2>/dev/null || echo 'installed'))"
+  if [ ${#linked[@]} -gt 0 ]; then
+    echo "  linked skills: ${linked[*]}"
+  fi
+else
+  echo "kstack ready."
+  echo "  browser: agent-browser"
+  echo "  (skipped skill symlinks — not inside .claude/skills/)"
+fi
+
+# 4. First-time welcome + cleanup
+if [ ! -d "$HOME/.kstack" ]; then
+  mkdir -p "$HOME/.kstack"
+  echo "  Welcome! Run /kstack-upgrade anytime to stay current."
+fi
+rm -f /tmp/kstack-latest-version

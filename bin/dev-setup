@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Set up kstack for local development — test skills from within this repo.
+#
+# Creates .claude/skills/kstack → (symlink to repo root) so Claude Code
+# discovers skills from your working tree. Changes take effect immediately.
+#
+# Usage: bin/dev-setup       # set up
+#        bin/dev-teardown    # clean up
+set -e
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+# 1. Create .claude/skills/ inside the repo
+mkdir -p "$REPO_ROOT/.claude/skills"
+
+# 2. Symlink .claude/skills/kstack → repo root
+KSTACK_LINK="$REPO_ROOT/.claude/skills/kstack"
+if [ -L "$KSTACK_LINK" ]; then
+  echo "Updating existing symlink..."
+  rm "$KSTACK_LINK"
+elif [ -d "$KSTACK_LINK" ]; then
+  echo "Error: .claude/skills/kstack is a real directory, not a symlink." >&2
+  echo "Remove it manually if you want to use dev mode." >&2
+  exit 1
+fi
+ln -s "$REPO_ROOT" "$KSTACK_LINK"
+
+# 3. Run setup via the symlink so it detects .claude/skills/ as its parent
+"$KSTACK_LINK/setup"
+
+echo ""
+echo "Dev mode active. Skills resolve from this working tree."
+echo "Edit any SKILL.md and test immediately — no copy/deploy needed."
+echo ""
+echo "To tear down: bin/dev-teardown"

@@ -1,0 +1,32 @@
+#!/bin/bash
+# Shim: locates the agent-browser binary.
+# Checks: global install, local node_modules, skill directory node_modules.
+
+# 1. Global install
+if command -v agent-browser &>/dev/null; then
+  echo "$(command -v agent-browser)"
+  exit 0
+fi
+
+# 2. Local node_modules (workspace-local)
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$ROOT" ] && test -x "$ROOT/.claude/skills/kstack/node_modules/.bin/agent-browser"; then
+  echo "$ROOT/.claude/skills/kstack/node_modules/.bin/agent-browser"
+  exit 0
+fi
+
+# 3. Global skill directory
+if test -x "$HOME/.claude/skills/kstack/node_modules/.bin/agent-browser"; then
+  echo "$HOME/.claude/skills/kstack/node_modules/.bin/agent-browser"
+  exit 0
+fi
+
+# 4. Relative to this script
+DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if test -x "$DIR/node_modules/.bin/agent-browser"; then
+  echo "$DIR/node_modules/.bin/agent-browser"
+  exit 0
+fi
+
+echo "ERROR: agent-browser not found. Run: npm install -g agent-browser && agent-browser install" >&2
+exit 1
