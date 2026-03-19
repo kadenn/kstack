@@ -69,21 +69,37 @@ git fetch origin main && git merge origin/main --no-edit
 
 ## Step 3: Run tests (on merged code)
 
-**Do NOT run `RAILS_ENV=test bin/rails db:migrate`** — `bin/test-lane` already calls
-`db:test:prepare` internally, which loads the schema into the correct lane database.
-Running bare test migrations without INSTANCE hits an orphan DB and corrupts structure.sql.
-
-Run both test suites in parallel:
+First, detect what test commands are available in this project:
 
 ```bash
-bin/test-lane 2>&1 | tee /tmp/ship_tests.txt &
-npm run test 2>&1 | tee /tmp/ship_vitest.txt &
-wait
+# Check for project-level test script hints
+cat package.json 2>/dev/null | grep -A5 '"scripts"'
+cat Makefile 2>/dev/null | grep -E "^test"
+ls bin/test* 2>/dev/null
+ls pytest.ini setup.cfg pyproject.toml 2>/dev/null
 ```
 
-After both complete, read the output files and check pass/fail.
+**Detection rules (in priority order):**
+- `CLAUDE.md` or `README.md` mentions a test command → use that
+- `bin/test-lane` exists → run it
+- `package.json` has a `"test"` script → run `npm test` (or `yarn test` / `bun test` based on lockfile)
+- `pytest.ini` or `pyproject.toml` with `[tool.pytest]` → run `pytest`
+- `go.mod` exists → run `go test ./...`
+- `Makefile` has a `test` target → run `make test`
+- Multiple detected → run all in parallel
+
+Run detected test commands, capturing output:
+
+```bash
+# Example — adapt based on what's detected above
+<detected-test-command> 2>&1 | tee /tmp/ship_tests.txt
+```
+
+After completing, read the output and check pass/fail.
 
 **If any test fails:** Show the failures and **STOP**. Do not proceed.
+
+**If no test command is found:** Note "No test command detected — skipping tests." and continue.
 
 **If all pass:** Continue silently — just note the counts briefly.
 
