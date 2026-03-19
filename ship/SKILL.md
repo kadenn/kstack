@@ -107,56 +107,71 @@ After completing, read the output and check pass/fail.
 
 ## Step 3.25: Eval Suites (conditional)
 
-Evals are mandatory when prompt-related files change. Skip this step entirely if no prompt files are in the diff.
+Run LLM evals when AI-related files change. Skip entirely if no AI-related files are in the diff.
 
-**1. Check if the diff touches prompt-related files:**
+**1. Check CLAUDE.md for project-specific eval instructions:**
+
+```bash
+cat CLAUDE.md 2>/dev/null | grep -A 10 -i "eval"
+```
+
+If CLAUDE.md defines eval patterns, eval commands, or file triggers — **use those exclusively** and skip the auto-detection below.
+
+**2. Detect changed AI-related files:**
 
 ```bash
 git diff origin/main --name-only
 ```
 
-Match against these patterns (from CLAUDE.md):
-- `app/services/*_prompt_builder.rb`
-- `app/services/*_generation_service.rb`, `*_writer_service.rb`, `*_designer_service.rb`
-- `app/services/*_evaluator.rb`, `*_scorer.rb`, `*_classifier_service.rb`, `*_analyzer.rb`
-- `app/services/concerns/*voice*.rb`, `*writing*.rb`, `*prompt*.rb`, `*token*.rb`
-- `app/services/chat_tools/*.rb`, `app/services/x_thread_tools/*.rb`
-- `config/system_prompts/*.txt`
-- `test/evals/**/*` (eval infrastructure changes affect all suites)
+A file is AI-related if it matches any of:
+- Name contains: `prompt`, `eval`, `llm`, `ai`, `generation`, `completion`
+- Extension is `.txt` or `.md` inside a directory named `prompts/`, `system_prompts/`, or `instructions/`
+- Content contains LLM API calls — grep changed files:
+  ```bash
+  git diff origin/main --name-only | xargs grep -l "openai\|anthropic\|claude\|gpt\|completion\|ChatCompletion" 2>/dev/null
+  ```
 
-**If no matches:** Print "No prompt-related files changed — skipping evals." and continue to Step 3.5.
+**If no AI-related files found:** Print "No AI-related files changed — skipping evals." and continue to Step 3.5.
 
-**2. Identify affected eval suites:**
+**3. Find eval test files for changed files:**
 
-Each eval runner (`test/evals/*_eval_runner.rb`) declares `PROMPT_SOURCE_FILES` listing which source files affect it. Grep these to find which suites match the changed files:
-
+Look for eval tests in this order:
 ```bash
-grep -l "changed_file_basename" test/evals/*_eval_runner.rb
+# Find files named with eval patterns near the changed files
+find . -name "*eval*" -o -name "*llm_test*" -o -name "*ai_test*" | grep -v node_modules | grep -v .git
+
+# Check common eval directories
+ls test/evals/ tests/evals/ evals/ eval/ 2>/dev/null
 ```
 
-Map runner → test file: `post_generation_eval_runner.rb` → `post_generation_eval_test.rb`.
+Match changed files to eval tests by name similarity (e.g. `tweet_prompt.txt` → `tweet_eval_test.*`).
 
-**Special cases:**
-- Changes to `test/evals/judges/*.rb`, `test/evals/support/*.rb`, or `test/evals/fixtures/` affect ALL suites that use those judges/support files. Check imports in the eval test files to determine which.
-- Changes to `config/system_prompts/*.txt` — grep eval runners for the prompt filename to find affected suites.
-- If unsure which suites are affected, run ALL suites that could plausibly be impacted. Over-testing is better than missing a regression.
+**If no eval tests found:** Print "No eval tests found — skipping evals." and continue to Step 3.5.
 
-**3. Run affected suites at `EVAL_JUDGE_TIER=full`:**
+**4. Detect eval run command:**
 
-`/ship` is a pre-merge gate, so always use full tier (Sonnet structural + Opus persona judges).
+In priority order:
+- CLAUDE.md mentions an eval command → use it
+- `package.json` has an `"eval"` or `"test:eval"` script → `npm run eval`
+- `Makefile` has an `eval` target → `make eval`
+- Test files are `.rb` and `bin/test-lane` exists → `bin/test-lane --eval <file>`
+- Test files are `.py` → `pytest <file> -v`
+- Test files are `.ts`/`.js` → `npm test -- <file>`
+- Fallback → run with the same test command detected in Step 3, scoped to eval files
+
+**5. Run affected eval tests:**
 
 ```bash
-EVAL_JUDGE_TIER=full EVAL_VERBOSE=1 bin/test-lane --eval test/evals/<suite>_eval_test.rb 2>&1 | tee /tmp/ship_evals.txt
+<detected-eval-command> 2>&1 | tee /tmp/ship_evals.txt
 ```
 
-If multiple suites need to run, run them sequentially (each needs a test lane). If the first suite fails, stop immediately — don't burn API cost on remaining suites.
+Run sequentially. If the first suite fails, stop — don't burn API cost on remaining suites.
 
-**4. Check results:**
+**6. Check results:**
 
-- **If any eval fails:** Show the failures, the cost dashboard, and **STOP**. Do not proceed.
-- **If all pass:** Note pass counts and cost. Continue to Step 3.5.
-
-**5. Save eval output** — include eval results and cost dashboard in the PR body (Step 8).
+- **If any eval fails:** Show the failures and **STOP**. Do not proceed.
+- **If all pass:** Note pass counts. Continue to Step 3.5.
+- **Save eval output** — include results in the PR body (Step 8).
 
 **Tier reference (for context — /ship always uses `full`):**
 | Tier | When | Speed (cached) | Cost |
