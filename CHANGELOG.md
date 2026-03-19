@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1 — 2026-03-19
+
+### Fixed
+- **`/kstack-upgrade`** — now correctly reports "already on latest version" when no upgrade is available instead of attempting a no-op upgrade
+
 ## 0.4.0 — 2026-03-19
 
 ### Added
