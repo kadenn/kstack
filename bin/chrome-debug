@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# chrome-debug — sync real Chrome profile and launch with remote debugging
+# Usage: chrome-debug [chrome-args...]
+#
+# Chrome 146+ blocks --remote-debugging-port on the default profile dir.
+# This script copies your real profile to /tmp/chrome-myprofile (cache excluded),
+# kills any existing debug Chrome, removes the singleton lock, then launches.
+# Your normal Chrome is untouched.
+#
+# Setup: ln -sf ~/.claude/skills/kstack/bin/chrome-debug ~/.local/bin/chrome-debug
+
+REAL="$HOME/Library/Application Support/Google/Chrome"
+DEBUG=/tmp/chrome-myprofile
+
+# Kill any existing Chrome using the debug profile (not the normal Chrome)
+pkill -f "user-data-dir=$DEBUG" 2>/dev/null
+sleep 0.5
+
+echo "Syncing Chrome profile..."
+rsync -a --delete \
+  --exclude='*/Cache' \
+  --exclude='*/Code Cache' \
+  --exclude='*/GPUCache' \
+  --exclude='*/ShaderCache' \
+  --exclude='*/Service Worker/CacheStorage' \
+  "$REAL/" "$DEBUG/"
+
+# Remove singleton lock so Chrome starts fresh
+rm -f "$DEBUG/SingletonLock" "$DEBUG/SingletonCookie" "$DEBUG/SingletonSocket"
+
+echo "Launching Chrome on port 9222..."
+open -na "Google Chrome" --args \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$DEBUG" \
+  "$@"

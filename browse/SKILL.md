@@ -219,14 +219,19 @@ $B state list                          # list saved state files
 
 ### Connect to your real Chrome
 ```bash
-# 1. Launch Chrome with: /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+# 1. Launch Chrome with remote debugging (syncs your real profile):
+chrome-debug   # installs to ~/.local/bin via setup, or: bin/chrome-debug
+
 # 2. Connect:
 $B connect 9222
 $B snapshot                            # you're in your logged-in Chrome!
-
-# Or auto-discover running Chrome:
-# agent-browser --auto-connect snapshot
 ```
+
+**Why `chrome-debug` instead of raw Chrome flags:**
+Chrome 146+ blocks `--remote-debugging-port` on the default profile dir.
+`chrome-debug` copies your real profile to `/tmp/chrome-myprofile` (cache excluded),
+kills any stale debug instance, removes the singleton lock, then launches.
+Your normal Chrome and its tabs are untouched.
 
 ### HTTP auth / headers
 ```bash
