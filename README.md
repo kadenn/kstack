@@ -2,7 +2,7 @@
 
 **kstack turns Claude Code from one generic assistant into a team of specialists you can summon on demand.**
 
-Eight opinionated workflow skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Plan review, code review, one-command shipping, browser automation, QA testing, and engineering retrospectives — all as slash commands.
+Ten opinionated workflow skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Plan review, code review, one-command shipping, browser automation, QA testing, Socratic thinking, and engineering retrospectives — all as slash commands.
 
 Browser skills (`/browse`, `/qa`) are powered by [agent-browser](https://github.com/vercel-labs/agent-browser) from Vercel Labs — a native Rust headless browser CLI built for AI agents. It uses 93% less context than Playwright MCP (~5.5K vs ~31K characters for the same test suite), so the agent can run 5-6x more browser actions before hitting context limits. ~7 MB install, ~8 MB memory, ~100ms per command.
 
@@ -25,8 +25,10 @@ Browser skills (`/browse`, `/qa`) are powered by [agent-browser](https://github.
 | `/ship` | Release engineer | Sync main, run tests, resolve Greptile reviews, push, open PR. For a ready branch, not for deciding what to build. |
 | `/browse` | QA engineer | Give the agent eyes. It logs in, clicks through your app, takes screenshots, catches breakage. Full QA pass in 60 seconds. |
 | `/qa` | QA lead | Systematic QA testing. On a feature branch, auto-analyzes your diff, identifies affected pages, and tests them. Also: full exploration, quick smoke test, regression mode. |
-| `/setup-browser-cookies` | Session manager | Import cookies from your real browser (Comet, Chrome, Arc, Brave, Edge) into the headless session. Test authenticated pages without logging in manually. |
 | `/retro` | Engineering manager | Team-aware retro: your deep-dive + per-person praise and growth opportunities for every contributor. |
+| `/socratic` | Thinking partner | Two modes: LEARN (open up understanding through guided questions) and PRODUCE (close loops and ship output). |
+| `/learn` | Socratic tutor | LEARN mode standalone — 5-level depth progression, surfaces assumptions and contradictions. |
+| `/produce` | Convergence engine | PRODUCE mode standalone — 5-step lock mechanics, converges thinking into shippable output. |
 
 ## Demo: one feature, five modes
 
@@ -71,10 +73,6 @@ Claude: Analyzing branch diff... 8 files changed, 3 routes affected.
         [Tests /listings/new, /listings/:id, /api/listings against localhost:3000]
         All 3 routes working. Upload + enrichment flow passes end to end.
 
-You:   /setup-browser-cookies staging.myapp.com
-
-Claude: Imported 8 cookies for staging.myapp.com from Chrome.
-
 You:   /qa https://staging.myapp.com --quick
 
 Claude: [Smoke test: homepage + 5 pages, 30 seconds]
@@ -105,11 +103,11 @@ This is the setup I use. One person, ten parallel agents, each with the right co
 
 Open Claude Code and paste this. Claude will do the rest.
 
-> Install kstack: run `git clone https://github.com/kadenn/kstack.git ~/.claude/skills/kstack && cd ~/.claude/skills/kstack && ./setup` then add a "kstack" section to CLAUDE.md that says to use the /browse skill from kstack for all web browsing, never use mcp\_\_claude-in-chrome\_\_\* tools, and lists the available skills: /plan-ceo-review, /plan-eng-review, /review, /ship, /browse, /qa, /setup-browser-cookies, /retro. Then ask the user if they also want to add kstack to the current project so teammates get it.
+> Install kstack: run `git clone https://github.com/kadenn/kstack.git ~/.claude/skills/kstack && cd ~/.claude/skills/kstack && ./setup` then add a "kstack" section to CLAUDE.md that says to use the /browse skill from kstack for all web browsing, never use mcp\_\_claude-in-chrome\_\_\* tools, and lists the available skills: /plan-ceo-review, /plan-eng-review, /review, /ship, /browse, /qa, /retro, /socratic, /learn, /produce. Then ask the user if they also want to add kstack to the current project so teammates get it.
 
 ### Step 2: Add to your repo so teammates get it (optional)
 
-> Add kstack to this project: run `cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup` then add a "kstack" section to this project's CLAUDE.md that says to use the /browse skill from kstack for all web browsing, never use mcp\_\_claude-in-chrome\_\_\* tools, lists the available skills: /plan-ceo-review, /plan-eng-review, /review, /ship, /browse, /qa, /setup-browser-cookies, /retro, and tells Claude that if kstack skills aren't working, run `cd .claude/skills/kstack && ./setup` to build the binary and register skills.
+> Add kstack to this project: run `cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup` then add a "kstack" section to this project's CLAUDE.md that says to use the /browse skill from kstack for all web browsing, never use mcp\_\_claude-in-chrome\_\_\* tools, lists the available skills: /plan-ceo-review, /plan-eng-review, /review, /ship, /browse, /qa, /retro, /socratic, /learn, /produce, and tells Claude that if kstack skills aren't working, run `cd .claude/skills/kstack && ./setup` to build the binary and register skills.
 
 Real files get committed to your repo (not a submodule), so `git clone` just works. Teammates just need to run `cd .claude/skills/kstack && ./setup` once to install agent-browser and register skills.
 
@@ -500,40 +498,7 @@ Claude: [Explores 12 pages, fills 3 forms, tests 2 flows]
 
 Reports and screenshots accumulate in `.kstack/qa-reports/` so you can track quality over time and compare runs.
 
-**Testing authenticated pages:** Use `/setup-browser-cookies` first to import your real browser sessions, then `/qa` can test pages behind login.
-
----
-
-## `/setup-browser-cookies`
-
-This is my **session manager mode**.
-
-Before `/qa` or `/browse` can test authenticated pages, they need cookies. Instead of manually logging in through the headless browser every time, `/setup-browser-cookies` imports your real sessions directly from your daily browser.
-
-Save and load authenticated sessions with `state save`/`state load`. Cookies, localStorage, and sessionStorage are all preserved. Use `cookies set` for individual cookie management or `--session-name` for automatic persistence per named session.
-
-```
-You:   /setup-browser-cookies
-
-Claude: Cookie picker opened — select the domains you want to import
-        in your browser, then tell me when you're done.
-
-        [You pick github.com, myapp.com in the browser UI]
-
-You:    done
-
-Claude: Imported 2 domains (47 cookies). Session is ready.
-```
-
-Or skip the UI entirely:
-
-```
-You:   /setup-browser-cookies github.com
-
-Claude: Imported 12 cookies for github.com from Comet.
-```
-
-First import per browser triggers a macOS Keychain prompt — click "Allow" or "Always Allow."
+**Testing authenticated pages:** Use `chrome-debug` to launch Chrome with your real profile synced, then connect with `agent-browser connect 9222`. Your real sessions carry over automatically.
 
 ---
 
@@ -573,6 +538,46 @@ It saves a JSON snapshot to `.context/retros/` so the next run can show trends. 
 
 ---
 
+## `/socratic`, `/learn`, `/produce`
+
+These are my **thinking partner modes**.
+
+Sometimes the bottleneck isn't code — it's clarity. These skills use Socratic dialogue to either open up understanding or close loops into output.
+
+- **`/socratic`** — the full tool. Asks which mode you want, then adapts.
+- **`/learn`** — go straight into LEARN mode. Guided questioning, 5 levels deep. Surfaces assumptions, forces distinctions, tests edge cases. You answer, it probes, you actually understand the thing instead of just knowing words for it.
+- **`/produce`** — go straight into PRODUCE mode. 5 sequential steps that lock decisions one by one: define output → lock thesis → draft structure → refine → finalize. Each step closes a door. Nothing gets reopened.
+
+Both modes track state with a compact status line (`LEARN: <topic> — Level 3/5`) and detect drift — if you start building mid-learn or re-questioning mid-produce, it names the shift and lets you decide.
+
+```
+You:   /learn distributed systems consensus
+
+Claude: LEARN: distributed consensus — Level 1/5
+
+        What do you think consensus actually means in a distributed system?
+        Not the formal definition — your working mental model.
+
+You:   all nodes agree on a value
+
+Claude: LEARN: distributed consensus — Level 1/5
+
+        Agree how? What mechanism forces them to agree — and what happens
+        if two nodes receive different proposals at the same time?
+```
+
+```
+You:   /produce write a technical spec for the auth system
+
+Claude: PRODUCE: auth system spec — Step 1/5: Define the output
+
+        What exactly are you producing? A spec for whom — engineers
+        implementing it, security reviewers, or both? And what format:
+        prose, schema definitions, sequence diagrams?
+```
+
+---
+
 ## Troubleshooting
 
 **Skill not showing up in Claude Code?**
@@ -582,13 +587,13 @@ Run `cd ~/.claude/skills/kstack && ./setup` (or `cd .claude/skills/kstack && ./s
 Run `npm install -g agent-browser && agent-browser install`.
 
 **Project copy is stale?**
-Re-copy from global: `for s in browse plan-ceo-review plan-eng-review review ship retro qa setup-browser-cookies; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack && cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup`
+Re-copy from global: `for s in browse plan-ceo-review plan-eng-review review ship retro qa socratic learn produce; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack && cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup`
 
 ## Upgrading
 
 Paste this into Claude Code:
 
-> Update kstack: run `cd ~/.claude/skills/kstack && git fetch origin && git reset --hard origin/main && ./setup`. If this project also has kstack at .claude/skills/kstack, update it too: run `for s in browse plan-ceo-review plan-eng-review review ship retro qa setup-browser-cookies; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack && cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup`
+> Update kstack: run `cd ~/.claude/skills/kstack && git fetch origin && git reset --hard origin/main && ./setup`. If this project also has kstack at .claude/skills/kstack, update it too: run `for s in browse plan-ceo-review plan-eng-review review ship retro qa socratic learn produce; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack && cp -Rf ~/.claude/skills/kstack .claude/skills/kstack && rm -rf .claude/skills/kstack/.git && cd .claude/skills/kstack && ./setup`
 
 The `setup` script installs agent-browser and re-symlinks skills. It takes a few seconds.
 
@@ -596,7 +601,7 @@ The `setup` script installs agent-browser and re-symlinks skills. It takes a few
 
 Paste this into Claude Code:
 
-> Uninstall kstack: remove the skill symlinks by running `for s in browse plan-ceo-review plan-eng-review review ship retro qa setup-browser-cookies; do rm -f ~/.claude/skills/$s; done` then run `rm -rf ~/.claude/skills/kstack` and remove the kstack section from CLAUDE.md. If this project also has kstack at .claude/skills/kstack, remove it by running `for s in browse plan-ceo-review plan-eng-review review ship retro qa setup-browser-cookies; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack` and remove the kstack section from the project CLAUDE.md too.
+> Uninstall kstack: remove the skill symlinks by running `for s in browse plan-ceo-review plan-eng-review review ship retro qa socratic learn produce; do rm -f ~/.claude/skills/$s; done` then run `rm -rf ~/.claude/skills/kstack` and remove the kstack section from CLAUDE.md. If this project also has kstack at .claude/skills/kstack, remove it by running `for s in browse plan-ceo-review plan-eng-review review ship retro qa socratic learn produce; do rm -f .claude/skills/$s; done && rm -rf .claude/skills/kstack` and remove the kstack section from the project CLAUDE.md too.
 
 ## Development
 

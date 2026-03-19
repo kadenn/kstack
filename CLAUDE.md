@@ -13,12 +13,17 @@ kstack/
 ├── browse/          # Browser automation (powered by agent-browser)
 │   ├── bin/         # find-browse shim
 │   └── SKILL.md     # Browse skill docs (edit directly)
+├── bin/
+│   └── chrome-debug # Sync real Chrome profile + launch with CDP on port 9222
 ├── ship/            # Ship workflow skill
 ├── review/          # PR review skill
 ├── plan-ceo-review/ # /plan-ceo-review skill
 ├── plan-eng-review/ # /plan-eng-review skill
 ├── retro/           # Retrospective skill
 ├── qa/              # QA testing skill
+├── socratic/        # /socratic skill (LEARN + PRODUCE modes)
+├── learn/           # /learn skill (standalone LEARN mode)
+├── produce/         # /produce skill (standalone PRODUCE mode)
 ├── setup            # One-time setup: install agent-browser + symlink skills
 └── SKILL.md         # Main skill docs (edit directly)
 ```

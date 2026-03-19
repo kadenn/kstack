@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 — 2026-03-19
+
+### Added
+- **`/socratic` v2.0.0** — full rewrite with structured LEARN/PRODUCE modes, 5-level depth progression, 5-step lock mechanics, state tracking status line, drift detection, mode transition consent, session output saving
+- **`/learn`** — standalone LEARN mode skill
+- **`/produce`** — standalone PRODUCE mode skill
+- **`bin/chrome-debug`** — sync real Chrome profile to `/tmp/chrome-myprofile` and launch with `--remote-debugging-port=9222`. Handles Chrome 146+ security requirement, singleton lock cleanup, and profile sync (cache excluded). Normal Chrome is untouched.
+
+### Removed
+- **`/setup-browser-cookies`** — superseded by `chrome-debug` which syncs the real Chrome profile, bringing all auth state automatically
+
+### Changed
+- `browse/SKILL.md` — updated "Connect to your real Chrome" section with `chrome-debug` flow
+
 ## 0.3.4 — 2026-03-13
 
 ### Added

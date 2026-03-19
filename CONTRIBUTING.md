@@ -106,7 +106,7 @@ the vendored copy too:
    cd /path/to/other-project
 
    # Remove old skill symlinks and vendored copy
-   for s in browse plan-ceo-review plan-eng-review review ship retro qa setup-browser-cookies; do
+   for s in browse plan-ceo-review plan-eng-review review ship retro qa socratic learn produce; do
      rm -f .claude/skills/$s
    done
    rm -rf .claude/skills/kstack
